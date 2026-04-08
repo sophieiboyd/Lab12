@@ -1,13 +1,13 @@
 ---
 title: "Lab 12 - Smoking during pregnancy"
-author: "Insert your name here"
-date: "Insert date here"
+author: "Sophie Boyd"
+date: "4-10-26"
 output: github_document
 ---
 
 ### Load packages and data
 
-```{r load-packages, message=FALSE}
+```{r load-packages, message=FALSE, warning=FALSE}
 library(tidyverse) 
 library(tidymodels)
 library(openintro)
@@ -15,10 +15,14 @@ library(openintro)
 
 ### Exercise 1
 
-Remove this text, and add your answer for Exercise 1 here.
-Add code chunks as needed.
-Don't forget to label your code chunk.
-Do not use spaces in code chunk labels.
+The numeric variables are fage, mage, weeks, visits, gained, and weight.
+
+*Question for lab: faceted by what?
+
+```{r numeric-visualizations}
+
+```
+
 
 ### Exercise 2
 
