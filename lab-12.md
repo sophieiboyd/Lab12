@@ -72,4 +72,66 @@ mean(ncbirths_white$weight)
   reasonably large sample size for bootstrapping.
 
 - In the boxplots from Exercise 1, I do not see any extreme skew or
-  clustering that would cause problems.
+  clustering that would cause problems. (\*consider returning to this
+  one and removing low weight outliers)
+
+### Exercise 4a
+
+``` r
+set.seed(123)
+
+boot_df <- ncbirths_white %>%
+  specify(response = weight) %>%
+  generate(reps = 1000, type = "bootstrap") %>%
+  calculate(stat = "mean")
+```
+
+### Exercise 4b
+
+``` r
+mean(boot_df$stat)
+```
+
+    ## [1] 7.251568
+
+``` r
+boot_df <- boot_df %>%
+  mutate(stat_cent1 = stat - 7.25) %>%
+  mutate(stat_cent = stat_cent1 + 7.43)
+```
+
+### Exercise 4c
+
+``` r
+boot_df %>%
+  ggplot(aes(x = stat_cent)) +
+  geom_histogram() +
+  geom_vline(aes(xintercept = 7.25),
+             color = "blue",
+             linetype = "dashed",
+             linewidth = 1)
+```
+
+![](lab-12_files/figure-gfm/sim-histogram-1.png)<!-- -->
+
+### Exercise 4d
+
+``` r
+boot_df %>%
+  summarize(lower = quantile(stat_cent, 0.025),
+            upper = quantile(stat_cent, 0.975))
+```
+
+    ## # A tibble: 1 × 2
+    ##   lower upper
+    ##   <dbl> <dbl>
+    ## 1  7.34  7.54
+
+The mean of the simulated means fell outside of the 95% confidence
+interval, meaning that the simulated mean (7.25) was significantly lower
+than the mean weight set as the population value (7.43)
+
+### Exercise 4e
+
+Based on my results, it seems that birth weight has decreased
+significantly since 2004.
