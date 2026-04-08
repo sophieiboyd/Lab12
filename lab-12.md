@@ -50,3 +50,26 @@ weeks of pregnancy (which I assume are labeled as premature births with
 the “premie” variable).
 
 ### Exercise 2
+
+``` r
+ncbirths_white <- ncbirths %>%
+  filter(whitemom %in% c("white"))
+
+mean(ncbirths_white$weight)
+```
+
+    ## [1] 7.250462
+
+### Exercise 3
+
+- I believe that the observations in the dataset are independent of one
+  another, assuming that each birth corresponds to a different mother.
+  If multiple births from a mother with multiple children were featured
+  in the dataset, this would violate the assumption of independence. I
+  would need more information to verify.
+
+- ncbirths_white has 714 observations, which I believe would be a
+  reasonably large sample size for bootstrapping.
+
+- In the boxplots from Exercise 1, I do not see any extreme skew or
+  clustering that would cause problems.
