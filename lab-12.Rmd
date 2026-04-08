@@ -17,15 +17,27 @@ library(openintro)
 
 The numeric variables are fage, mage, weeks, visits, gained, and weight.
 
-*Question for lab: faceted by what?
+```{r numeric-summaries, warning=FALSE}
+ncbirths %>%
+  select(fage, mage, weeks, visits, gained, weight) %>%
+  summarize(across(everything(), list(mean = mean, sd = sd), na.rm = TRUE))
 
-```{r numeric-visualizations}
+ncbirths_long <- ncbirths %>%
+  pivot_longer(
+    cols = c("fage", "mage", "weeks", "visits", "gained", "weight"),
+    names_to = "numeric_label",
+    values_to = "numeric_value")
 
+ncbirths_long %>%
+  ggplot(aes(x = numeric_value)) +
+  geom_boxplot() +
+  facet_wrap(~numeric_label, nrow = 6) + 
+  labs(x = NULL) 
 ```
 
+Distributions are mostly balanced, with some high outliers on the amount of weight gained during pregnancy and low outliers on the number of weeks of pregnancy (which I assume are labeled as premature births with the "premie" variable).
 
 ### Exercise 2
 
-...
 
-Add exercise headings as needed.
+
