@@ -44,15 +44,15 @@ ncbirths_long %>%
 
 ![](lab-12_files/figure-gfm/numeric-summaries-1.png)<!-- -->
 
-Distributions are mostly balanced, with some high outliers on the amount
-of weight gained during pregnancy and low outliers on the number of
-weeks of pregnancy (which I assume are labeled as premature births with
-the “premie” variable).
+Distributions are mostly balanced, but there is at least one outlier on
+each variable. The collections of high outliers on weight gained during
+pregnancy and low outliers on weeks and birth weight might be
+problematic for future analyses.
 
 ### Exercise 2
 
 ``` r
-ncbirths_white <- ncbirths %>%
+ncbirths_white <- ncbirths%>%
   filter(whitemom %in% c("white"))
 
 mean(ncbirths_white$weight)
@@ -71,9 +71,47 @@ mean(ncbirths_white$weight)
 - ncbirths_white has 714 observations, which I believe would be a
   reasonably large sample size for bootstrapping.
 
-- In the boxplots from Exercise 1, I do not see any extreme skew or
-  clustering that would cause problems. (\*consider returning to this
-  one and removing low weight outliers)
+- In the box plot from Exercise 1, I see a collection of low outliers,
+  as well as a couple of high outliers, that might influence the results
+  when analyzing birth weight. I chose to restrict my range to 3
+  standard deviations above and below the mean:
+
+``` r
+ncbirths %>%
+  ggplot(aes(x = weight)) +
+  geom_boxplot() +
+  labs(title = 'Distribution of birth weights before filtering to deal with outliers')
+```
+
+![](lab-12_files/figure-gfm/birth-weight-chart-1.png)<!-- -->
+
+``` r
+ncbirths_filtered <- ncbirths %>%
+  filter(weight <= 11.63) %>%
+  filter(weight >= 2.57)
+
+ncbirths_filtered %>%
+  ggplot(aes(x = weight)) +
+  geom_boxplot() +
+  labs(title = 'Distribution of birth weights after filtering to deal with outliers')
+```
+
+![](lab-12_files/figure-gfm/birth-weight-chart-2.png)<!-- -->
+
+Now I need to update my dataframe before running the bootstrapping
+simulation:
+
+``` r
+ncbirths_white <- ncbirths_filtered%>%
+  filter(whitemom %in% c("white"))
+
+mean(ncbirths_white$weight)
+```
+
+    ## [1] 7.321764
+
+The mean is slightly higher after removing the outliers. The sample size
+decreased from 714 to 703, so not a substantial change.
 
 ### Exercise 4a
 
@@ -92,11 +130,11 @@ boot_df <- ncbirths_white %>%
 mean(boot_df$stat)
 ```
 
-    ## [1] 7.251568
+    ## [1] 7.322748
 
 ``` r
 boot_df <- boot_df %>%
-  mutate(stat_cent1 = stat - 7.25) %>%
+  mutate(stat_cent1 = stat - 7.32) %>%
   mutate(stat_cent = stat_cent1 + 7.43)
 ```
 
@@ -106,7 +144,7 @@ boot_df <- boot_df %>%
 boot_df %>%
   ggplot(aes(x = stat_cent)) +
   geom_histogram() +
-  geom_vline(aes(xintercept = 7.25),
+  geom_vline(aes(xintercept = 7.32),
              color = "blue",
              linetype = "dashed",
              linewidth = 1)
@@ -125,13 +163,87 @@ boot_df %>%
     ## # A tibble: 1 × 2
     ##   lower upper
     ##   <dbl> <dbl>
-    ## 1  7.34  7.54
+    ## 1  7.33  7.53
 
-The mean of the simulated means fell outside of the 95% confidence
-interval, meaning that the simulated mean (7.25) was significantly lower
-than the mean weight set as the population value (7.43)
+The mean of the simulated means fell just outside of the 95% confidence
+interval, meaning that just about 5% of the simulated means were at
+least as extreme as my observed value.
 
 ### Exercise 4e
 
-Based on my results, it seems that birth weight has decreased
-significantly since 2004.
+The mean birth weight was significantly lower than 7.43 pounds,
+informing the conclusion that average birth weight for white babies has
+decreased significantly since 1995.
+
+### Exercise 5
+
+``` r
+ncbirths_filtered %>%
+  ggplot(aes(x = weight)) +
+  geom_boxplot() +
+  facet_wrap(~habit, nrow = 3)
+```
+
+![](lab-12_files/figure-gfm/habit-weight-boxplot-1.png)<!-- -->
+
+Distributions of birth weights for babies of smoking and non-smoking
+mothers were similar, but the average birth weight was higher for babies
+of non-smokers than babies of smokers. Both distributions were somewhat
+skewed to the left.
+
+### Exercise 6
+
+``` r
+ncbirths_clean <- ncbirths_filtered %>%
+  filter(!is.na(habit)) %>%
+  filter(!is.na(weight))
+```
+
+It is important to clean the data before obtaining group summaries
+because participants with missing data on “habit” will not fall under
+either group of interest and participants with missing data on “weight”
+do not provide information about the main dependent variable of
+interest.
+
+### Exercise 7
+
+``` r
+ncbirths_clean %>%
+  group_by(habit) %>%
+  summarize(mean_weight = mean(weight))
+```
+
+    ## # A tibble: 2 × 2
+    ##   habit     mean_weight
+    ##   <fct>           <dbl>
+    ## 1 nonsmoker        7.26
+    ## 2 smoker           6.91
+
+7.26 - 6.91 = 0.35. The average difference in birth weight for
+non-smoking vs. smoking mothers is 0.35 pounds.
+
+### Exercise 8
+
+- Null hypothesis: The difference in the average birth weights of babies
+  of non-smoking vs. smoking mothers is not significantly different
+  from 0. (H0: µ1 - µ2 = 0)
+
+- Alternative hypothesis: The difference in the average birth weights of
+  babies of non-smoking vs. smoking mothers is significantly different
+  from 0. (H1: µ1 - µ2 =/= 0)
+
+### Exercise 9
+
+To test whether maternal smoking is associated with a difference in
+birth weight, we could simulate a distribution of mean differences in
+birth weight between babies of non-smoking and smoking mothers to see if
+the simulated mean was significantly different from 0.
+
+- I think permutation would be the most appropriate method for this kind
+  of hypothesis testing. \*\*I need to review the ODD in the module and
+  come back to this!
+
+- The observed test statistic is the sample mean difference in birth
+  weight between babies of non-smoking vs. smoking mothers (0.35).
+
+- 
