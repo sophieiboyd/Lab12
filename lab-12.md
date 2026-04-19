@@ -165,9 +165,20 @@ boot_df %>%
     ##   <dbl> <dbl>
     ## 1  7.33  7.53
 
-The mean of the simulated means fell just outside of the 95% confidence
-interval, meaning that just about 5% of the simulated means were at
-least as extreme as my observed value.
+``` r
+boot_df %>%
+  filter(stat_cent <= 7.32) %>%
+  summarize(p_value = n() / nrow(boot_df))
+```
+
+    ## # A tibble: 1 × 1
+    ##   p_value
+    ##     <dbl>
+    ## 1   0.012
+
+\*\*update response with p-value The mean of the simulated means fell
+just outside of the 95% confidence interval, meaning that just about 5%
+of the simulated means were at least as extreme as my observed value.
 
 ### Exercise 4e
 
@@ -237,13 +248,77 @@ non-smoking vs. smoking mothers is 0.35 pounds.
 To test whether maternal smoking is associated with a difference in
 birth weight, we could simulate a distribution of mean differences in
 birth weight between babies of non-smoking and smoking mothers to see if
-the simulated mean was significantly different from 0.
+the simulated mean difference was significantly different from 0.
 
 - I think permutation would be the most appropriate method for this kind
-  of hypothesis testing. \*\*I need to review the ODD in the module and
-  come back to this!
+  of hypothesis testing (calculating mean difference between two
+  groups).
 
 - The observed test statistic is the sample mean difference in birth
   weight between babies of non-smoking vs. smoking mothers (0.35).
 
-- 
+- To generate the sampling distribution under the null hypothesis, I
+  will simulated a distribution that is centered at 0 to represent the
+  conditions under which there is no difference in birth weight between
+  babies of non-smokiing and smoking mothers:
+
+``` r
+null_dist <- ncbirths_clean %>%
+  specify(response = weight, explanatory = habit) %>%
+  hypothesize(null = "independence") %>%
+  generate(1000, type = "permute") %>%
+  calculate(stat = "diff in means", 
+           order = c("nonsmoker", "smoker"))
+```
+
+``` r
+null_dist %>%
+  ggplot(aes(x = stat)) +
+  geom_histogram(binwidth = .05)
+```
+
+![](lab-12_files/figure-gfm/weight-habit-nulldist-1.png)<!-- -->
+
+``` r
+null_dist %>%
+  filter(stat >= .35) %>%
+  summarize(p_value = n() / nrow(null_dist))
+```
+
+    ## # A tibble: 1 × 1
+    ##   p_value
+    ##     <dbl>
+    ## 1   0.004
+
+- The p-value was .006. If there were no difference in the mean birth
+  weight of babies of non-smoking and smoking mothers, there would be
+  only a 0.6% chance of obtaining our observed result (difference of
+  .35) or a more extreme result.
+
+### Exercise 10
+
+``` r
+set.seed(123)
+
+boot_diff_df <- ncbirths_clean %>%
+  specify(response = weight, explanatory = habit) %>%
+  generate(reps = 1000, type = "bootstrap") %>%
+  calculate(stat = "diff in means",
+           order = c("nonsmoker", "smoker"))
+```
+
+``` r
+boot_diff_df %>%
+  summarize(lower = quantile(stat, 0.025),
+            upper = quantile(stat, 0.975))
+```
+
+    ## # A tibble: 1 × 2
+    ##   lower upper
+    ##   <dbl> <dbl>
+    ## 1 0.113 0.579
+
+Based on our data, 95% of the simulated mean differences in birth weight
+between non-smoking and smoking mothers fell between .11 and .58.
+
+### Exercise 11
