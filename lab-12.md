@@ -1,7 +1,7 @@
 Lab 12 - Smoking during pregnancy
 ================
 Sophie Boyd
-4-10-26
+4-20-26
 
 ### Load packages and data
 
@@ -176,9 +176,8 @@ boot_df %>%
     ##     <dbl>
     ## 1   0.012
 
-\*\*update response with p-value The mean of the simulated means fell
-just outside of the 95% confidence interval, meaning that just about 5%
-of the simulated means were at least as extreme as my observed value.
+1.2% of the values are as extreme or more extreme than the observed mean
+of 7.32.
 
 ### Exercise 4e
 
@@ -258,11 +257,13 @@ the simulated mean difference was significantly different from 0.
   weight between babies of non-smoking vs. smoking mothers (0.35).
 
 - To generate the sampling distribution under the null hypothesis, I
-  will simulated a distribution that is centered at 0 to represent the
+  will simulate a distribution that is centered at 0 to represent the
   conditions under which there is no difference in birth weight between
-  babies of non-smokiing and smoking mothers:
+  babies of non-smoking and smoking mothers:
 
 ``` r
+set.seed(123)
+
 null_dist <- ncbirths_clean %>%
   specify(response = weight, explanatory = habit) %>%
   hypothesize(null = "independence") %>%
@@ -288,11 +289,11 @@ null_dist %>%
     ## # A tibble: 1 × 1
     ##   p_value
     ##     <dbl>
-    ## 1   0.004
+    ## 1   0.001
 
-- The p-value was .006. If there were no difference in the mean birth
+- The p-value was .001. If there were no difference in the mean birth
   weight of babies of non-smoking and smoking mothers, there would be
-  only a 0.6% chance of obtaining our observed result (difference of
+  only a 0.1% chance of obtaining our observed result (difference of
   .35) or a more extreme result.
 
 ### Exercise 10
@@ -318,7 +319,118 @@ boot_diff_df %>%
     ##   <dbl> <dbl>
     ## 1 0.113 0.579
 
-Based on our data, 95% of the simulated mean differences in birth weight
-between non-smoking and smoking mothers fell between .11 and .58.
+The 95% confidence interval for differences in mean birth weight between
+non-smoking and smoking mothers is from .11 to .58.
 
 ### Exercise 11
+
+``` r
+ncbirths_clean %>%
+  group_by(mature) %>%
+  summarize(min = min(mage), max = max(mage))
+```
+
+    ## # A tibble: 2 × 3
+    ##   mature        min   max
+    ##   <fct>       <int> <int>
+    ## 1 mature mom     35    50
+    ## 2 younger mom    13    34
+
+The minimum age to classify a mom as “mature” is 35 years old.
+
+### Exercise 12
+
+- Null hypothesis: Mother’s age and birth weight are independent. There
+  is not a significant difference in the proportions of low birth weight
+  babies between older and younger mothers. (H0:p1 - p2 = 0)
+
+- Alternative hypothesis (directional): Mother’s age and birth weight
+  are dependent. The proportion of low birth weight babies is higher
+  among mature mothers than among younger mothers (H1:p1 - p2 \> 0)
+
+- Conditions for inference: The sample is reasonably large and
+  observations are independent. There is one high outlier on maternal
+  age that I will exclude before proceeding:
+
+``` r
+ncbirths_clean <- ncbirths_clean %>%
+  filter(mage < 50)
+```
+
+- Test method: permutation
+
+``` r
+set.seed(123)
+null_dist <- ncbirths_clean %>%
+  specify(
+    response = lowbirthweight,
+    explanatory = mature,
+    success = "low"
+  ) %>%
+  hypothesize(null = "independence") %>%
+  generate(1000, type = "permute") %>%
+  calculate(
+    stat = "diff in props",
+    order = c("younger mom", "mature mom")
+  )
+```
+
+``` r
+ncbirths_clean %>%
+  count(mature, lowbirthweight) %>%
+  group_by(mature) %>%
+  mutate(p_hat = n/sum(n))
+```
+
+    ## # A tibble: 4 × 4
+    ## # Groups:   mature [2]
+    ##   mature      lowbirthweight     n  p_hat
+    ##   <fct>       <fct>          <int>  <dbl>
+    ## 1 mature mom  low               13 0.102 
+    ## 2 mature mom  not low          114 0.898 
+    ## 3 younger mom low               77 0.0906
+    ## 4 younger mom not low          773 0.909
+
+The observed difference in proportions is .012.
+
+``` r
+null_dist %>%
+  filter(stat >= .012) %>%
+  summarize(p_value = n() / nrow(null_dist))
+```
+
+    ## # A tibble: 1 × 1
+    ##   p_value
+    ##     <dbl>
+    ## 1   0.369
+
+The p-value is .369, so there is not a significant difference in the
+proportions of low birth weight babies between mature mothers and
+younger mothers.
+
+### Exercise 13
+
+``` r
+set.seed(123)
+
+boot_diff_df <- ncbirths_clean %>%
+  specify(response = lowbirthweight, explanatory = mature, success = "low") %>%
+  generate(reps = 1000, type = "bootstrap") %>%
+  calculate(stat = "diff in props",
+           order = c("younger mom", "mature mom"))
+```
+
+``` r
+boot_diff_df %>%
+  summarize(lower = quantile(stat, 0.025),
+            upper = quantile(stat, 0.975))
+```
+
+    ## # A tibble: 1 × 2
+    ##     lower  upper
+    ##     <dbl>  <dbl>
+    ## 1 -0.0667 0.0407
+
+The bounds of the 95% confidence interval span negative and positive
+values, meaning that a difference in proportions of low birth weight
+babies in either direction would be reasonable to expect.
